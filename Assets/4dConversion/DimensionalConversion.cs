@@ -1,26 +1,46 @@
 using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEditor.ShaderGraph.Internal;
 using UnityEngine;
 
 public class DimensionalConversion : MonoBehaviour
 {
+    tetrahedronMesh mesh4d;
+    public string definitionFile;
+
     // Start is called before the first frame update
     void Start()
     {
-        
+        // create output tetrahedrons
+        tetrahedron[] tetsOutput;
+        // extract tetrahedrons from file and add to mesh
+        if(parseModel4D(definitionFile, out tetsOutput))
+        {
+            mesh4d = new tetrahedronMesh(tetsOutput);
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        // get cross section and output to mesh
+        triangle[] tris;
+        mesh4d.getCrossSection(FindObjectOfType<Player>().w, out tris);
+        int[] triangleArray = new int[0];
+        Vector3[] pointArray = new Vector3[0];
+        toMesh(tris, out triangleArray, out pointArray);
+        Mesh mesh = new Mesh();
+        this.GetComponent<MeshFilter>().mesh = mesh;
+        mesh.vertices = pointArray;
+        mesh.triangles = triangleArray;
     }
-
-    Tuple<Vector4[], Vector4[]> parseModel4D(string file)
+    
+    // create tuple of vector arrays for points and tetrahedrons based on file and return
+    bool parseModel4D(string file, out tetrahedron[] outTets)
     {
+        // initialize output
+        outTets = new tetrahedron[0];
         StreamReader reader = File.OpenText(file);
         Vector4[] points = new Vector4[0];
         Vector4[] tetrahedrons = new Vector4[0];
@@ -34,7 +54,7 @@ public class DimensionalConversion : MonoBehaviour
                 passedMiddle = true;
                 continue;
             }
-            // concert line into vector4 results
+            // covert line into vector4 results
             Vector4 results;
             string[] vals = line.Split(",");
             results.w = float.Parse(vals[0]);
@@ -50,6 +70,30 @@ public class DimensionalConversion : MonoBehaviour
                 tetrahedrons.Append(results);
             }
         }
-        return Tuple.Create<Vector4[], Vector4[]>(points, tetrahedrons);
+        foreach(Vector4 i in tetrahedrons)
+        {
+            outTets.Append(new tetrahedron(points[(int)Math.Round(i.w)], points[(int)Math.Round(i.x)], points[(int)Math.Round(i.y)], points[(int)Math.Round(i.z)]));
+        }
+        if (outTets.Length > 0)
+            return true;
+        else
+            return false;
+    }
+    
+    // convert points into one vector and create indecies vector
+    void toMesh(triangle[] faces, out int[] triangles, out Vector3[] points)
+    {
+        triangles = new int[0];
+        points = new Vector3[0];
+        int iterator = 0;
+        foreach(triangle i in faces)
+        {
+            for(int j = 0; j < 3; j++)
+            {
+                points.Append(i.getPoints()[j]);
+                triangles.Append(iterator);
+                iterator++;
+            }
+        }
     }
 }
