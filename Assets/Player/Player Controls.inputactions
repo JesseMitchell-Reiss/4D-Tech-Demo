@@ -120,11 +120,11 @@
                 },
                 {
                     "name": "",
-                    "id": "6fdf8ac7-bc3f-4ed0-a9d4-6f9f3acef88b",
+                    "id": "40902281-bbc3-49c3-9c80-a51081b33803",
                     "path": "<Mouse>/delta",
                     "interactions": "",
                     "processors": "",
-                    "groups": "Keyboard",
+                    "groups": "",
                     "action": "Look",
                     "isComposite": false,
                     "isPartOfComposite": false

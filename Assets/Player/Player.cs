@@ -41,7 +41,8 @@ public class Player : MonoBehaviour
     void Update()
     {
         // controller look
-        this.gameObject.transform.Rotate(new Vector3(look.y * sensitivity * Time.deltaTime * -1f, look.x * sensitivity * Time.deltaTime, 0));
+        this.gameObject.transform.Rotate(0, look.x * sensitivity * Time.deltaTime, 0);
+        this.gameObject.GetComponentInChildren<Camera>().transform.Rotate(-look.y * sensitivity * Time.deltaTime, 0, 0);
     }
 
     private void FixedUpdate()
