@@ -294,6 +294,26 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: -7853344467284014899, guid: 9cdc5ac0034284d409f456b49aaedde6,
+        type: 3}
+      propertyPath: sensitivity
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: -7853344467284014899, guid: 9cdc5ac0034284d409f456b49aaedde6,
+        type: 3}
+      propertyPath: sensitivity.x
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: -7853344467284014899, guid: 9cdc5ac0034284d409f456b49aaedde6,
+        type: 3}
+      propertyPath: sensitivity.y
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: -7853344467284014899, guid: 9cdc5ac0034284d409f456b49aaedde6,
+        type: 3}
+      propertyPath: sprintMultiplier
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 278709530509865241, guid: 9cdc5ac0034284d409f456b49aaedde6,
         type: 3}
       propertyPath: m_Name

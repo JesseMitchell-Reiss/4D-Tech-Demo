@@ -13,7 +13,7 @@ public class Player : MonoBehaviour
     [SerializeField]
     float sprintMultiplier;
     [SerializeField]
-    float sensitivity;
+    Vector2 sensitivity;
 
     // object variables
     CharacterController controller;
@@ -40,9 +40,16 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        // controller look
-        this.gameObject.transform.Rotate(0, look.x * sensitivity * Time.deltaTime, 0);
-        this.gameObject.GetComponentInChildren<Camera>().transform.Rotate(-look.y * sensitivity * Time.deltaTime, 0, 0);
+        // player yaw look
+        this.gameObject.transform.Rotate(0, look.x * sensitivity.x * Time.deltaTime, 0);
+        // normalize the current camera pitch
+        float camPitch = cam.transform.rotation.eulerAngles.x;
+        float normalPitch = -(camPitch - 180f - Mathf.Sign(camPitch - 180f) * 180f);
+        // check for pitch within range or moving in correct direction
+        if(normalPitch > -85f && look.y < 0 || normalPitch < 85f && look.y > 0)
+        {
+            cam.transform.Rotate(-look.y * sensitivity.y * Time.deltaTime, 0, 0);
+        }
     }
 
     private void FixedUpdate()
