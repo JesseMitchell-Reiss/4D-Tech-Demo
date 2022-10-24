@@ -3,6 +3,14 @@ using UnityEngine;
 
 public class Rotors3d : MonoBehaviour
 {
+    // dot product and wedge product
+    Vector4 GeometricProduct(Vector3 a, Vector3 b)
+    {
+        float dot = Vector3.Dot(a, b);
+        Vector3 wedge = WedgeProduct(a, b);
+        return new Vector4(dot, wedge.x, wedge.y, wedge.z);
+    }
+
     /* defining the parallelogram two vectors form by unit planes
      * coordinates in yz plane, xz plane, and xy plane in that order
      * because they're respectively parallel to the x, y, z axes */
