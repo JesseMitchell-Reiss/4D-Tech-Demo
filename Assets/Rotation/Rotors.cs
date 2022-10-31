@@ -1,74 +1,84 @@
 // rotating in 3d to test the math in a more intuitive setting
+using System;
 using UnityEngine;
 
 public class Rotors : MonoBehaviour
 {
     [SerializeField]
-    float angleX, angleY, angleZ;
+    float angle;
+
+    [SerializeField]
+    Bivector plane;
 
     private void Update()
     {
-        Debug.Log(Rotate3(transform.localPosition + Vector3.one, angleX, angleY, angleZ));
+        Rotor r = ConstructRotor(angle, plane);
+        Debug.Log(ApplyRotor(r, Vector3.right));
     }
 
-    // angles are in radians
-    Vector3 Rotate3(Vector3 v, float angleX, float angleY, float angleZ)
+    // dot wedge product
+    struct Rotor
     {
-        Vector4 rotorX = ConstructRotor3(new Vector3(1f, 0f, 0f), angleX);
-        Vector4 rotorY = ConstructRotor3(new Vector3(0f, 1f, 0f), angleY);
-        Vector4 rotorZ = ConstructRotor3(new Vector3(0f, 0f, 1f), angleZ);
+        public float a;
+        public float yz, xz, xy;
 
-        v = ApplyRotor3(rotorX, v);
-        v = ApplyRotor3(rotorY, v);
-        v = ApplyRotor3(rotorZ, v);
-        return v;
+        public Rotor(float dot, Bivector bivector)
+        {
+            a = dot;
+            yz = bivector.yz;
+            xz = bivector.xz;
+            xy = bivector.xy;
+        }
     }
 
-    Vector3 ApplyRotor3(Vector4 r, Vector3 v)
+    [Serializable]
+    struct Bivector
     {
+        public float yz, xz, xy;
+
+        public Bivector(float yzPlane, float xzPlane, float xyPlane)
+        {
+            yz = yzPlane;
+            xz = xzPlane;
+            xy = xyPlane;
+        }
+    }
+
+    Vector3 ApplyRotor(Rotor r, Vector3 v)
+    {
+        // matrix multiplication
+        Vector3 p = Vector3.zero;
+        p[0] =  r.a  * v.x + r.xy * v.y + r.xz * v.z;
+        p[1] = -r.xy * v.x + r.a  * v.y + r.yz * v.z;
+        p[2] = -r.xz * v.x - r.yz * v.y + r.a  * v.z;
+
+        // trivector part (represents volume of parallelepiped)
+        float p012 = r.yz * v.x - r.xz * v.y + r.xy * v.z;
+
+        // more matrix multiplication
         Vector3 q = Vector3.zero;
+        q[0] =  r.a  * p[0] + r.xy * p[1] + r.xz * p[2] + r.yz * p012;
+        q[1] = -r.xy * p[0] + r.a  * p[1] + r.yz * p[2] - r.xz * p012;
+        q[2] = -r.xz * p[0] - r.yz * p[1] + r.a  * p[2] + r.xy * p012;
 
-        // matrix multiplication (pretend the lines are brackets)
-        /* | a   xz  xy | | x |
-         * | -xz a   yz | | y |
-         * | -xy -yz a  | | z | */
-
-        q[0] =  r[0] * v[0] + r[2] * v[1] + r[3] * v[2];
-        q[1] = -r[2] * v[0] + r[0] * v[1] + r[1] * v[2];
-        q[2] = -r[3] * v[0] - r[1] * v[1] + r[0] * v[2];
-
-        // trivector part
-        float tv = v[0] * r[1] + v[1] * r[2] + v[2] * r[3];
-
-        Vector3 u = Vector3.zero;
-
-        // more matrix multiplication to get the actual rotated vector
-        /* | a   yz  xz xy  | | q0 |
-         * | -yz a   xy -xz | | q1 |
-         * | -xz -xy a  yz  | | q2 |
-         *                    | tv | */
-
-        u[0] =  r[0] * q[0] + r[1] * q[1] + r[2] * q[2] + r[3] * tv;
-        u[1] = -r[1] * q[0] + r[0] * q[1] + r[3] * q[2] - r[2] * tv;
-        u[2] = -r[2] * q[0] - r[3] * q[1] + r[0] * q[2] + r[1] * tv;
-
-        return u;
+        return q;
     }
 
-    // plane coord order: yz, xz, xy (perpendicular to x, y, z axes respectively)
-    // olane must be normalized, angle must be in radians
-    Vector4 ConstructRotor3(Vector3 plane, float angle)
+    // rotating in a plane however many radians
+    Rotor ConstructRotor(float radians, Bivector plane)
     {
-        Vector4 rotor = Vector4.zero;
+        // normalizing plane so you don't have to worry about it
+        float planeMag = Mathf.Sqrt(
+            plane.yz * plane.yz + plane.xz * plane.xz + plane.xy * plane.xy
+        );
+        plane.yz /= planeMag;
+        plane.xz /= planeMag;
+        plane.xy /= planeMag;
 
-        // rotation will be double the angle given to it
-        rotor[0] = Mathf.Cos(angle / 2f);
+        float sin = Mathf.Sin(radians / 2f);
+        float cos = Mathf.Cos(radians / 2f);
+        Bivector b = new Bivector(-sin * plane.yz, -sin * plane.xz, -sin * plane.xy);
 
-        float sinAngle = Mathf.Sin(angle / 2f);
-        rotor[1] = -sinAngle * plane[0];
-        rotor[2] = -sinAngle * plane[1];
-        rotor[3] = -sinAngle * plane[2];
-
-        return rotor;
+        return new Rotor(cos, b);
     }
 }
