@@ -1,5 +1,6 @@
 using System.Linq;
 using UnityEngine;
+using System.Collections.Generic;
 
 /*
  * ALL functions in this script will be run on a frame by frame basis at runtime
@@ -48,69 +49,69 @@ public class line
 // 4 dimensional tetrahedron data type consisting of four vector4 points
 public class tetrahedron
 {
-    line[] lines;
-    Vector4[] points;
+    List<line> lines;
+    List<Vector4> points;
 
     // construct tetrahedron based on four vector4 inputs
     public tetrahedron(Vector4 a, Vector4 b, Vector4 c, Vector4 d)
     {
-        points = new Vector4[4] { a, b, c, d };
+        points = new List<Vector4>(new Vector4[] { a, b, c, d });
     }
 
     /* make not fail when hitting point */
     // create a cross section if the plane in w bisects the tetrahedron, otherwise return false
-    public bool getCrossSection(float w, out triangle[] tris)
+    public bool getCrossSection(float w, out List<triangle> tris)
     {
-        tris = new triangle[0];
+        tris = new List<triangle>(new triangle[0]);
 
         /* maybe create lines on start and operate on them? */
         // make arrays for either side of plane
-        Vector4[] greaterW = new Vector4[0];
-        Vector4[] lesserW = new Vector4[0];
+        List<Vector4> greaterW = new List<Vector4>(new Vector4[0]);
+        List<Vector4> lesserW = new List<Vector4>(new Vector4[0]);
         foreach (Vector4 i in points)
         {
             if (i.w >= w)
             {
-                greaterW.Append(i);
+                greaterW.Add(i);
             }
             else
             {
-                lesserW.Append(i);
+                lesserW.Add(i);
             }
         }
 
         // get all lines in tetrahedron and append to lines array
-        lines = new line[0];
+        lines = new List<line>(new line[0]);
         foreach (Vector4 i in greaterW)
         {
             foreach (Vector4 j in lesserW)
             {
-                lines.Append(new line(i, j)); /* append each line that crosses the plane */
+                lines.Add(new line(i, j)); /* append each line that crosses the plane */
             }
         }
 
         // create vector3 array of points at which lines intersect the w plane
-        Vector3[] linePoints = new Vector3[0];
+        List<Vector3> linePoints = new List<Vector3>(new Vector3[0]);
         foreach (line i in lines)
         {
             if(i.getPoint(w, out Vector3 tempPoint))
             {
-                linePoints.Append(tempPoint);
+                linePoints.Add(tempPoint);
             }
         }
 
         // output list of triangular cross section(s) of the tetrahedron
-        if (linePoints.Length == 3)
+        if (linePoints.Count == 3)
         {
-            tris.Append(new triangle(linePoints[0], linePoints[1], linePoints[2]));
+            tris.Add(new triangle(linePoints[0], linePoints[1], linePoints[2]));
             return true; /* only one output triangle is necessary if there are exactly 3 points */
         }
 
         // if there are more than 3 points, square cross sections need to be converted to triangles
-        else if (linePoints.Length == 4)
+        else if (linePoints.Count == 4)
         {
             // get the indecies of the points that define the hypotenuse
-            int[] hypIndecies = new int[2];
+            List<int> hypIndecies = new List<int>(new int[2]);
             float distance = 0; /* longest distance placeholder */
             int iIndex = 0;
             int jIndex = 0;
@@ -120,14 +121,15 @@ public class tetrahedron
                 {
                     if (Vector3.Distance(i, j) > distance)
                     {
-                        hypIndecies = new int[2] { iIndex, jIndex }; /* add longest line indecies */
+                        distance = Vector3.Distance(i, j);
+                        hypIndecies = new List<int>(new int[2] { iIndex, jIndex }); /* add longest line indecies */
                     }
                     jIndex++;
                 }
                 jIndex = 0;
                 iIndex++;
             }
-            int[] nonHypIndecies = new int[0];
+            List<int> nonHypIndecies = new List<int>();
 
             /* do this better */
             // get non-hypotenuse indeceies
@@ -144,14 +146,14 @@ public class tetrahedron
                 }
                 if (nonHyp)
                 {
-                    nonHypIndecies.Append(i);
+                    nonHypIndecies.Add(i);
                 }
             hypEnd: continue;
             }
 
-            // append tris that share both hypotenuse points
-            tris.Append(new triangle(linePoints[hypIndecies[0]], linePoints[hypIndecies[1]], linePoints[nonHypIndecies[0]]));
-            tris.Append(new triangle(linePoints[hypIndecies[0]], linePoints[hypIndecies[1]], linePoints[nonHypIndecies[1]]));
+            // Add tris that share both hypotenuse points
+            tris.Add(new triangle(linePoints[hypIndecies[0]], linePoints[hypIndecies[1]], linePoints[nonHypIndecies[0]]));
+            tris.Add(new triangle(linePoints[hypIndecies[0]], linePoints[hypIndecies[1]], linePoints[nonHypIndecies[1]]));
             return true;
         }
 
@@ -164,16 +166,16 @@ public class tetrahedron
 // 3 dimensional triangle data type consisting of 3 vector3 points
 public class triangle
 {
-    Vector3[] points;
+    List<Vector3> points;
 
     // construct triangle based on set of 3 vector3 variables in the standard spacial dimensions
     public triangle(Vector3 a = new Vector3(), Vector3 b = new Vector3(), Vector3 c = new Vector3())
     {
-        points = new Vector3[] { a, b, c };
+        points = new List<Vector3>(new Vector3[] { a, b, c });
     }
 
     // get vector3 array output
-    public Vector3[] getPoints()
+    public List<Vector3> getPoints()
     {
         return points;
     }
@@ -182,37 +184,37 @@ public class triangle
 // mesh data type consisting of multiple tetrahedrons
 public class tetrahedronMesh
 {
-    tetrahedron[] mesh;
+    List<tetrahedron> mesh;
 
     // constructor takes array of tetrahedrons and adds them to the internal array
-    public tetrahedronMesh(tetrahedron[] tets)
+    public tetrahedronMesh(List<tetrahedron> tets)
     {
         mesh = tets;
     }
 
     // function outputs all cross sectional triangles
-    public bool getCrossSection(float w, out triangle[] tris)
+    public bool getCrossSection(float w, out List<triangle> tris)
     {
         // initialize tris output
-        tris = new triangle[0];
+        tris = new List<triangle>();
 
         // bool for any valid sections
         bool validSection = false;
 
         // create output variable
-        triangle[] outputTris;
-
+        List<triangle> outputTris;
         /* multithread */
         // check for valid sections and output if they exist
         foreach (tetrahedron i in mesh)
         {
-            outputTris = new triangle[0];
+            // working to here, get cross section of tetrahedron return false
+            outputTris = new List<triangle>();
             if (i.getCrossSection(w, out outputTris))
             {
                 validSection = true;
                 foreach (triangle j in outputTris)
                 {
-                    tris.Append(j); /* append all triangles from cross section of specific tetrahedron */
+                    tris.Add(j); /* append all triangles from cross section of specific tetrahedron */
                 }
             }
         }
