@@ -26,7 +26,7 @@ public class Rotors : MonoBehaviour
         public float a;
 
         // plane (contains sine of angle)
-        public float wx, yw, wz, yz, xy, zx;
+        public float wx, yw, wz, xy, zx, yz;
 
         public Rotor4(float a, Bivector4 b)
         {
@@ -34,9 +34,68 @@ public class Rotors : MonoBehaviour
             wx = b.wx;
             yw = b.yw;
             wz = b.wz;
-            yz = b.yz;
             xy = b.xy;
             zx = b.zx;
+            yz = b.yz;
         }
     }
+
+    // rotates a vector by a rotor
+    // ab: bivector, a * b - b * a
+    // abc: trivector, (r.bc * v.a) + (r.ca * v.b) + (r.ab * v.c)
+    // last row of left matrix gives quadvector (4-volume)
+    /* left matrix * vector produces a row 5-vector which gets multipled
+     * w/ columns of right matrix */
+    /* |  a   wx  -yw   wz | | w | |  a   -wx   yw   wz  |
+     * | -wx  a    xy  -zx | | x | |  wx   a   -xy   zx  |
+     * |  yw -xy   a    yz | | y | | -yw   xy   a   -yz  |
+     * | -wz  zx  -yz   a  | | z | |  wz  -zx   yz   a   | 
+     * | xyz -yzw -zwx wxy |       |  xyz -yzw -zwx  wxy | */
+    Vector4 Rotate(Rotor4 r, Vector4 v)
+    {
+        // trivectors
+        Vector4 tv;
+        tv.w =  r.yz * v.x + r.zx * v.y + r.xy * v.z;
+        tv.x = -r.wz * v.y - r.yw * v.z + r.yz * v.z;
+        tv.y =  r.wx * v.z - r.zx * v.w - r.wz * v.x;
+        tv.z =  r.xy * v.w + r.yw * v.x + r.wx * v.y;
+
+        Vector4 m;
+        m.w =  r.a  * v.w + r.wx * v.x - r.yw * v.y + r.wz * v.z;
+        m.x = -r.wx * v.w + r.a  * v.x + r.xy * v.y - r.zx * v.z;
+        m.y =  r.yw * v.w - r.xy * v.x + r.a  * v.y + r.yz * v.z;
+        m.z = -r.wz * v.w + r.zx * v.x - r.yz * v.y + r.a  * v.z;
+        float qv = tv.w * v.w + tv.x * v.x + tv.y * v.y + tv.z * v.z;
+
+        /* |  a   -wx   yw   wz  |
+         * |  wx   a   -xy   zx  |
+         * | -yw   xy   a   -yz  |
+         * |  wz  -zx   yz   a   |
+         * |  xyz -yzw -zwx  wxy |
+         */
+        Vector4 n;
+        n.w =  m.w * r.a  + m.x * r.wx - m.y * r.yw + m.z * r.wz + qv * tv.w;
+        n.x = -m.w * r.wx + m.x * r.a  + m.y * r.xy - m.z * r.zx - qv * tv.x;
+        n.y =  m.w * r.yw - m.x * r.xy + m.y * r.a  + m.z * r.yz - qv * tv.y;
+        n.z =  m.w * r.wz + m.x * r.zx - m.y * r.yz + m.z * r.a  + qv * tv.z;
+        return n;
+    }
+
+    // constructs a rotor to rotate from one vector to another
+    Rotor4 ConstructRotor(Vector4 vFrom, Vector4 vTo)
+    {
+        float a = 1f + Vector4.Dot(vTo, vFrom);
+
+        // left rotation is b * a so flip vectors
+        Bivector4 b = Wedge(vTo, vFrom);
+
+        return new Rotor4(a, b);
+    }
+
+    // area spanned by two vectors
+    // ab = -ba so order matters
+    Bivector4 Wedge(Vector4 a, Vector4 b) => new Bivector4(
+        a.w * b.x - b.w * a.x, a.y * b.w - b.y * a.w, a.w * b.z - b.w * a.z,
+        a.x * b.y - b.x * a.y, a.z * b.x - b.z * a.x, a.y * b.z - b.y - a.z
+    );
 }
