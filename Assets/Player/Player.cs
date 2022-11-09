@@ -21,7 +21,7 @@ public class Player : MonoBehaviour
 
     // hidden variables
     [HideInInspector]
-    public float w;
+    public float w = 0.5f;
     float jumpVelocity;
     Vector2 XYmove;
     bool jump;
@@ -40,6 +40,7 @@ public class Player : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        w = 0.5f;
         // player yaw look
         this.gameObject.transform.Rotate(0, look.x * sensitivity.x * Time.deltaTime, 0);
         // normalize the current camera pitch
