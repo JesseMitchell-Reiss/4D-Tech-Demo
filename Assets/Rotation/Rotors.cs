@@ -6,6 +6,11 @@ public class Rotors : MonoBehaviour
     [SerializeField]
     Vector4 vFrom, vTo;
 
+    private void Update()
+    {
+        Debug.Log(Rotate(vFrom, vTo));
+    }
+
     // parallelogram spanned by two vectors
     struct Bivector4
     {
@@ -41,6 +46,18 @@ public class Rotors : MonoBehaviour
             zx = b.zx;
             yz = b.yz;
         }
+    }
+
+    // constructs and applies a rotor
+    Vector4 Rotate(Vector4 vFrom, Vector4 vTo)
+    {
+        // normalizing
+        Vector4 uFrom = vFrom.normalized;
+        Vector4 uTo = vTo.normalized;
+
+        Rotor4 r = ConstructRotor(uFrom, uTo);
+        Vector4 v = ApplyRotor(r, uFrom) * vTo.magnitude;
+        return v;
     }
 
     // rotates a vector by a rotor
