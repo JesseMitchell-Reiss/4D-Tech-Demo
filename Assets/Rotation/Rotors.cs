@@ -3,6 +3,9 @@ using UnityEngine;
 
 public class Rotors : MonoBehaviour
 {
+    [SerializeField]
+    Vector4 vFrom, vTo;
+
     // parallelogram spanned by two vectors
     struct Bivector4
     {
@@ -51,14 +54,22 @@ public class Rotors : MonoBehaviour
      * |  yw -xy   a    yz | | y | | -yw   xy   a   -yz  |
      * | -wz  zx  -yz   a  | | z | |  wz  -zx   yz   a   | 
      * | xyz -yzw -zwx wxy |       |  xyz -yzw -zwx  wxy | */
-    Vector4 Rotate(Rotor4 r, Vector4 v)
+    Vector4 ApplyRotor(Rotor4 r, Vector4 v)
     {
         // trivectors
         Vector4 tv;
-        tv.w =  r.yz * v.x + r.zx * v.y + r.xy * v.z;
-        tv.x = -r.wz * v.y - r.yw * v.z + r.yz * v.z;
-        tv.y =  r.wx * v.z - r.zx * v.w - r.wz * v.x;
-        tv.z =  r.xy * v.w + r.yw * v.x + r.wx * v.y;
+
+        //     xyz          yzx          zxy
+        tv.w = r.yz * v.x + r.zx * v.y + r.xy * v.z;
+
+        //     ywz          wzy          zyw
+        tv.x = r.wz * v.y - r.yz * v.w + r.yw * v.z;
+
+        //     zwx          wxz          xzw
+        tv.y = r.wx * v.z - r.zx * v.w - r.wz * v.x;
+
+        //     wxy          xyw          ywx
+        tv.z = r.xy * v.w + r.yw * v.x + r.wx * v.y;
 
         Vector4 m;
         m.w =  r.a  * v.w + r.wx * v.x - r.yw * v.y + r.wz * v.z;
@@ -77,7 +88,7 @@ public class Rotors : MonoBehaviour
         n.w =  m.w * r.a  + m.x * r.wx - m.y * r.yw + m.z * r.wz + qv * tv.w;
         n.x = -m.w * r.wx + m.x * r.a  + m.y * r.xy - m.z * r.zx - qv * tv.x;
         n.y =  m.w * r.yw - m.x * r.xy + m.y * r.a  + m.z * r.yz - qv * tv.y;
-        n.z =  m.w * r.wz + m.x * r.zx - m.y * r.yz + m.z * r.a  + qv * tv.z;
+        n.z = -m.w * r.wz + m.x * r.zx - m.y * r.yz + m.z * r.a  + qv * tv.z;
         return n;
     }
 
@@ -89,6 +100,21 @@ public class Rotors : MonoBehaviour
         // left rotation is b * a so flip vectors
         Bivector4 b = Wedge(vTo, vFrom);
 
+        // normalizing
+        float sqrMag = 
+            a * a + b.wx * b.wx + b.yw * b.yw + b.wz * b.wz + b.xy * b.xy + b.yz * b.yz + 
+            b.zx * b.zx;
+
+        float magnitude = Mathf.Sqrt(sqrMag);
+
+        a /= magnitude;
+        b.wx /= magnitude;
+        b.yw /= magnitude;
+        b.wz /= magnitude;
+        b.xy /= magnitude;
+        b.yz /= magnitude;
+        b.zx /= magnitude;
+
         return new Rotor4(a, b);
     }
 
@@ -96,6 +122,6 @@ public class Rotors : MonoBehaviour
     // ab = -ba so order matters
     Bivector4 Wedge(Vector4 a, Vector4 b) => new Bivector4(
         a.w * b.x - b.w * a.x, a.y * b.w - b.y * a.w, a.w * b.z - b.w * a.z,
-        a.x * b.y - b.x * a.y, a.z * b.x - b.z * a.x, a.y * b.z - b.y - a.z
+        a.x * b.y - b.x * a.y, a.z * b.x - b.z * a.x, a.y * b.z - b.y * a.z
     );
 }
