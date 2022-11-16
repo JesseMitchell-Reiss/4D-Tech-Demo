@@ -101,8 +101,8 @@ public class Rotors : MonoBehaviour
         Bivector4 b = Wedge(vTo, vFrom);
 
         // normalizing
-        float sqrMag = 
-            a * a + b.wx * b.wx + b.yw * b.yw + b.wz * b.wz + b.xy * b.xy + b.yz * b.yz + 
+        float sqrMag =
+            a * a + b.wx * b.wx + b.yw * b.yw + b.wz * b.wz + b.xy * b.xy + b.yz * b.yz +
             b.zx * b.zx;
 
         float magnitude = Mathf.Sqrt(sqrMag);
