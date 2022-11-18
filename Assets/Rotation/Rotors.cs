@@ -6,17 +6,12 @@ public class Rotors : MonoBehaviour
     [SerializeField]
     Vector4 vFrom, vTo;
 
-    private void Update()
-    {
-        Debug.Log(Rotate(vFrom, vTo));
-    }
-
     // parallelogram spanned by two vectors
-    struct Bivector4
+    struct Bivector
     {
         public float wx, yw, wz, xy, zx, yz;
 
-        public Bivector4(float wx, float yw, float wz, float xy, float zx, float yz)
+        public Bivector(float wx, float yw, float wz, float xy, float zx, float yz)
         {
             this.wx = wx;
             this.yw = yw;
@@ -28,7 +23,7 @@ public class Rotors : MonoBehaviour
     }
 
     // matrix for the rotation basically
-    struct Rotor4
+    struct Rotor
     {
         // dot product (contains cosine of angle)
         public float a;
@@ -36,7 +31,7 @@ public class Rotors : MonoBehaviour
         // plane (contains sine of angle)
         public float wx, yw, wz, xy, zx, yz;
 
-        public Rotor4(float a, Bivector4 b)
+        public Rotor(float a, Bivector b)
         {
             this.a = a;
             wx = b.wx;
@@ -48,62 +43,19 @@ public class Rotors : MonoBehaviour
         }
     }
 
-    // constructs and applies a rotor
+    // constructs and applies a Rotor
     Vector4 Rotate(Vector4 vFrom, Vector4 vTo)
     {
         // normalizing
         Vector4 uFrom = vFrom.normalized;
         Vector4 uTo = vTo.normalized;
 
-        Rotor4 r = ConstructRotor(uFrom, uTo);
+        Rotor r = ConstructRotor(uFrom, uTo);
         Vector4 v = ApplyRotor(r, uFrom) * vTo.magnitude;
         return v;
     }
 
-    // rotor-rotor product
-    Rotor4 RotorProduct(Rotor4 p, Rotor4 q)
-    {
-        Rotor4 r;
-        // dot product, sorta
-        r.a = 
-            p.a * q.a - p.wx * q.wx - p.yw * q.yw - p.wz * q.wz - 
-            p.xy * q.xy - p.yz * p.yz - p.zx * p.zx;
-
-        // wedge product, also sorta
-        r.wx =
-            p.wx * q.a  + q.wx * p.a  -
-            p.xy * q.yw + q.xy * p.yw -
-            p.zx * q.wz + q.zx * p.wz;
-
-        r.yw =
-            p.yw * q.a  + q.yw * p.a  -
-            p.wx * q.xy + q.wx * p.xy +
-            p.wz * q.yz - p.yz * q.wz;
-
-        r.wz =
-            p.wz * q.a  + q.wz * p.a  +
-            p.zx * q.wx - q.zx * p.wx +
-            p.yz * q.yw - q.yz * p.yw;
-
-        r.xy =
-            p.xy * q.a  + q.xy * p.a  -
-            p.yw * q.wx + q.yw * p.wx -
-            p.zx * q.yz + q.zx * p.yz;
-
-        r.yz =
-            p.yz * q.a  + q.yz * p.a  -
-            p.wz * q.yw + q.wz * p.yw -
-            p.zx * q.xy + q.zx * p.xy;
-
-        r.zx =
-            p.zx * q.a  + q.zx * p.a  +
-            p.wx * q.wz - q.wx * p.wz -
-            p.xy * q.yz + q.xy * p.yz;
-
-        return r;
-    }
-
-    // rotates a vector by a rotor
+    // rotates a vector by a Rotor
     // ab: bivector, u.a * v.b - u.b * v.a
     // abc: trivector, (r.bc * v.a) + (r.ca * v.b) + (r.ab * v.c)
     // last row of left matrix gives quadvector (4-volume)
@@ -114,7 +66,7 @@ public class Rotors : MonoBehaviour
      * |  yw -xy   a    yz | | y | | -yw   xy   a   -yz |
      * | -wz  zx  -yz   a  | | z | |  wz  -zx   yz   a  | 
      * | xyz ywz  zwx  wxy |       |  xyz ywz  zwx  wxy | */
-    Vector4 ApplyRotor(Rotor4 r, Vector4 v)
+    Vector4 ApplyRotor(Rotor r, Vector4 v)
     {
         // trivectors
         Vector4 tv;
@@ -152,13 +104,13 @@ public class Rotors : MonoBehaviour
         return n;
     }
 
-    // constructs a rotor to rotate from one vector to another
-    Rotor4 ConstructRotor(Vector4 vFrom, Vector4 vTo)
+    // constructs a Rotor to rotate from one vector to another
+    Rotor ConstructRotor(Vector4 vFrom, Vector4 vTo)
     {
         float a = 1f + Vector4.Dot(vTo, vFrom);
 
         // left rotation is b * a so flip vectors
-        Bivector4 b = Wedge(vTo, vFrom);
+        Bivector b = Wedge(vTo, vFrom);
 
         // normalizing
         float sqrMag =
@@ -175,12 +127,59 @@ public class Rotors : MonoBehaviour
         b.yz /= magnitude;
         b.zx /= magnitude;
 
-        return new Rotor4(a, b);
+        return new Rotor(a, b);
     }
+
+    // Rotor-Rotor product
+    Rotor RotorProduct(Rotor p, Rotor q)
+    {
+        Rotor r;
+        // dot product, sorta
+        r.a =
+            p.a * q.a - p.wx * q.wx - p.yw * q.yw - p.wz * q.wz -
+            p.xy * q.xy - p.yz * p.yz - p.zx * p.zx;
+
+        // wedge product, also sorta
+        r.wx =
+            p.wx * q.a + q.wx * p.a -
+            p.xy * q.yw + q.xy * p.yw -
+            p.zx * q.wz + q.zx * p.wz;
+
+        r.yw =
+            p.yw * q.a + q.yw * p.a -
+            p.wx * q.xy + q.wx * p.xy +
+            p.wz * q.yz - p.yz * q.wz;
+
+        r.wz =
+            p.wz * q.a + q.wz * p.a +
+            p.zx * q.wx - q.zx * p.wx +
+            p.yz * q.yw - q.yz * p.yw;
+
+        r.xy =
+            p.xy * q.a + q.xy * p.a -
+            p.yw * q.wx + q.yw * p.wx -
+            p.zx * q.yz + q.zx * p.yz;
+
+        r.yz =
+            p.yz * q.a + q.yz * p.a -
+            p.wz * q.yw + q.wz * p.yw -
+            p.zx * q.xy + q.zx * p.xy;
+
+        r.zx =
+            p.zx * q.a + q.zx * p.a +
+            p.wx * q.wz - q.wx * p.wz -
+            p.xy * q.yz + q.xy * p.yz;
+
+        return r;
+    }
+
+    Rotor RotorInverse(Rotor r) => new Rotor(
+        r.a, new Bivector(-r.wx, -r.yw, -r.wz, -r.xy, -r.zx, -r.yz
+    ));
 
     // area spanned by two vectors
     // ab = -ba so order matters
-    Bivector4 Wedge(Vector4 a, Vector4 b) => new Bivector4(
+    Bivector Wedge(Vector4 a, Vector4 b) => new Bivector(
         a.w * b.x - b.w * a.x, a.y * b.w - b.y * a.w, a.w * b.z - b.w * a.z,
         a.x * b.y - b.x * a.y, a.z * b.x - b.z * a.x, a.y * b.z - b.y * a.z
     );
