@@ -60,17 +60,60 @@ public class Rotors : MonoBehaviour
         return v;
     }
 
+    // rotor-rotor product
+    Rotor4 RotorProduct(Rotor4 p, Rotor4 q)
+    {
+        Rotor4 r;
+        // dot product, sorta
+        r.a = 
+            p.a * q.a - p.wx * q.wx - p.yw * q.yw - p.wz * q.wz - 
+            p.xy * q.xy - p.yz * p.yz - p.zx * p.zx;
+
+        // wedge product, also sorta
+        r.wx =
+            p.wx * q.a  + q.wx * p.a  -
+            p.xy * q.yw + q.xy * p.yw -
+            p.zx * q.wz + q.zx * p.wz;
+
+        r.yw =
+            p.yw * q.a  + q.yw * p.a  -
+            p.wx * q.xy + q.wx * p.xy +
+            p.wz * q.yz - p.yz * q.wz;
+
+        r.wz =
+            p.wz * q.a  + q.wz * p.a  +
+            p.zx * q.wx - q.zx * p.wx +
+            p.yz * q.yw - q.yz * p.yw;
+
+        r.xy =
+            p.xy * q.a  + q.xy * p.a  -
+            p.yw * q.wx + q.yw * p.wx -
+            p.zx * q.yz + q.zx * p.yz;
+
+        r.yz =
+            p.yz * q.a  + q.yz * p.a  -
+            p.wz * q.yw + q.wz * p.yw -
+            p.zx * q.xy + q.zx * p.xy;
+
+        r.zx =
+            p.zx * q.a  + q.zx * p.a  +
+            p.wx * q.wz - q.wx * p.wz -
+            p.xy * q.yz + q.xy * p.yz;
+
+        return r;
+    }
+
     // rotates a vector by a rotor
-    // ab: bivector, a * b - b * a
+    // ab: bivector, u.a * v.b - u.b * v.a
     // abc: trivector, (r.bc * v.a) + (r.ca * v.b) + (r.ab * v.c)
     // last row of left matrix gives quadvector (4-volume)
     /* left matrix * vector produces a row 5-vector which gets multipled
      * w/ columns of right matrix */
-    /* |  a   wx  -yw   wz | | w | |  a   -wx   yw   wz  |
-     * | -wx  a    xy  -zx | | x | |  wx   a   -xy   zx  |
-     * |  yw -xy   a    yz | | y | | -yw   xy   a   -yz  |
-     * | -wz  zx  -yz   a  | | z | |  wz  -zx   yz   a   | 
-     * | xyz -yzw -zwx wxy |       |  xyz -yzw -zwx  wxy | */
+    /* |  a   wx  -yw   wz | | w | |  a   -wx   yw   wz |
+     * | -wx  a    xy  -zx | | x | |  wx   a   -xy   zx |
+     * |  yw -xy   a    yz | | y | | -yw   xy   a   -yz |
+     * | -wz  zx  -yz   a  | | z | |  wz  -zx   yz   a  | 
+     * | xyz ywz  zwx  wxy |       |  xyz ywz  zwx  wxy | */
     Vector4 ApplyRotor(Rotor4 r, Vector4 v)
     {
         // trivectors
