@@ -35,12 +35,14 @@ public class Player : MonoBehaviour
         controller = this.gameObject.GetComponent<CharacterController>();
         jumpVelocity = 2 * Mathf.Sqrt(Physics.gravity.z * jumpHeight);
         cam = this.gameObject.GetComponentInChildren<Camera>();
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     // Update is called once per frame
     void Update()
     {
-        w = 0.5f;
+        w += Wmove * Time.deltaTime;
+        Debug.Log(w);
         // player yaw look
         this.gameObject.transform.Rotate(0, look.x * sensitivity.x * Time.deltaTime, 0);
         // normalize the current camera pitch
