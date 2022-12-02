@@ -3,10 +3,7 @@ using UnityEngine;
 
 public class Rotors : MonoBehaviour
 {
-    [SerializeField]
-    Vector4 vFrom, vTo;
-
-    // parallelogram spanned by two vectors
+    // area spanned by two vectors
     struct Bivector
     {
         public float wx, yw, wz, xy, zx, yz;
@@ -25,7 +22,7 @@ public class Rotors : MonoBehaviour
     // matrix for the rotation basically
     struct Rotor
     {
-        // dot product (contains cosine of angle)
+        // scalar, dot product (contains cosine of angle)
         public float a;
 
         // plane (contains sine of angle)
@@ -43,19 +40,40 @@ public class Rotors : MonoBehaviour
         }
     }
 
-    // constructs and applies a Rotor
-    Vector4 Rotate(Vector4 vFrom, Vector4 vTo)
+    // constructs and applies a rotor
+    Vector4 Rotate(Vector4 v1, Vector4 v2, Vector4 vFrom, float t = 1f)
     {
         // normalizing
+        Vector4 u1 = v1.normalized;
+        Vector4 u2 = v2.normalized;
         Vector4 uFrom = vFrom.normalized;
-        Vector4 uTo = vTo.normalized;
 
-        Rotor r = ConstructRotor(uFrom, uTo);
-        Vector4 v = ApplyRotor(r, uFrom) * vTo.magnitude;
+        Rotor r = ConstructRotor(u1, u2);
+        Rotor interpolatedRotor = InterpolatedRotor(r, t);
+        Vector4 v = ApplyRotor(interpolatedRotor, uFrom) * v2.magnitude;
         return v;
     }
 
-    // rotates a vector by a Rotor
+    // interpolates rotor, r must be normalized and t must be between 0 and 1
+    Rotor InterpolatedRotor(Rotor r, float t)
+    {
+        // rotation angle
+        float theta = Mathf.Acos(r.a) * t;
+        float cosT = Mathf.Cos(theta);
+        float sinT = Mathf.Sin(theta);
+
+        // normalizing rotor bivector
+        float rMag = Mathf.Sqrt(
+            r.wx * r.wx + r.yw * r.yw + r.wz * r.wz + r.xy * r.xy + r.zx * r.zx + r.yz * r.yz);
+
+        // constructing rotor
+        Bivector b = new Bivector(
+            sinT * r.wx / rMag, sinT * r.yw / rMag, sinT * r.wz / rMag, 
+            sinT * r.xy / rMag, sinT * r.zx / rMag, sinT * r.yz / rMag);
+        return new Rotor(cosT, b);
+    }
+
+    // rotates a vector by a rotor
     // ab: bivector, u.a * v.b - u.b * v.a
     // abc: trivector, (r.bc * v.a) + (r.ca * v.b) + (r.ab * v.c)
     // last row of left matrix gives quadvector (4-volume)
