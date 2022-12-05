@@ -3,7 +3,7 @@ using UnityEngine;
 
 using static UnityEngine.Mathf;
 
-// represents the parallelogram two vectors make
+// oriented area in the way a vector is an oriented line
 public class Bivector4
 {
     // components are in terms of unit planes
@@ -49,13 +49,14 @@ public class Bivector4
     );
 }
 
-// defines a matrix that operates on vectors to rotate them (R' * a * R)
+// geometric object that rotates vectors
 public class Rotor4
 {
     // scalar value (contains cosine of angle)
     float A;
 
     // providing both the bivector form and the individual coordinates for convenience
+    // bivector represents plane of rotation and sine of angle
     Bivector4 B;
     float WX, YW, WZ, XY, YZ, ZX;
 
